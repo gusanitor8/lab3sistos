@@ -33,6 +33,7 @@ FileData read_file(char* file_path){
 }
 
 int main(int argc, char *argv[]){
+    
     FileData file_data = read_file(argv[1]);
     void* mapped_data = file_data.mapped_data;
     off_t file_size = file_data.file_size;
