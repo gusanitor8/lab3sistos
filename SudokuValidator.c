@@ -9,6 +9,7 @@
 #define ROWS 9
 #define COLUMNS 9
 
+int sudoku[ROWS][COLUMNS]; //sudoku 
 
 typedef struct {
     void* mapped_data;
@@ -32,14 +33,7 @@ FileData read_file(char* file_path){
     return file_data;
 }
 
-int main(int argc, char *argv[]){
-    
-    FileData file_data = read_file(argv[1]);
-    void* mapped_data = file_data.mapped_data;
-    off_t file_size = file_data.file_size;
-
-    int sudoku[ROWS][COLUMNS]; //sudoku 
-
+int copy_sudoku(void* mapped_data, off_t file_size){
     // Copy the file into the sudoku array
     for (off_t i = 0; i < file_size; i++){
         char number_str = ((char*)mapped_data)[i];
@@ -48,14 +42,31 @@ int main(int argc, char *argv[]){
         sudoku[i/9][i%9] = number;
     }
 
-    // Print the sudoku
+    return 0;
+}
+
+int print_sudoku(){
     for(int i = 0; i < ROWS; i++) {
         for(int j = 0; j < COLUMNS; j++) {
             printf("%d ", sudoku[i][j]);
         }        
         printf("\n");
     }
+    return 0;
+}
 
 
+int main(int argc, char *argv[]){
+
+    FileData file_data = read_file(argv[1]);
+
+    void* mapped_data = file_data.mapped_data;
+    off_t file_size = file_data.file_size;
+    
+    copy_sudoku(mapped_data, file_size);
+
+    // Print the sudoku
+    print_sudoku();
+    
     return 0;
 }
