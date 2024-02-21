@@ -16,6 +16,13 @@ typedef struct {
     off_t file_size;
 } FileData;
 
+
+/**
+ * @brief Reads the file and returns a FileData struct
+ * 
+ * @param file_path the path of the file to read
+ * @return FileData struct containing the mapped data and the file size
+ */
 FileData read_file(char* file_path){
     int file_descriptor = open(file_path, O_RDONLY);
     off_t file_size = lseek(file_descriptor, 0, SEEK_END);
@@ -33,6 +40,14 @@ FileData read_file(char* file_path){
     return file_data;
 }
 
+
+/**
+ * @brief Copies the sudoku from the mapped data into the sudoku array
+ * 
+ * @param mapped_data mapped data of the file
+ * @param file_size size of the file in bytes
+ * @return int 
+ */
 int copy_sudoku(void* mapped_data, off_t file_size){
     // Copy the file into the sudoku array
     for (off_t i = 0; i < file_size; i++){
@@ -45,6 +60,12 @@ int copy_sudoku(void* mapped_data, off_t file_size){
     return 0;
 }
 
+
+/**
+ * @brief prints teh sudoku array
+ * 
+ * @return int 
+ */
 int print_sudoku(){
     for(int i = 0; i < ROWS; i++) {
         for(int j = 0; j < COLUMNS; j++) {
@@ -56,6 +77,13 @@ int print_sudoku(){
 }
 
 
+/**
+ * @brief main function
+ * 
+ * @param argc 
+ * @param argv file path for the sudoku file
+ * @return int 
+ */
 int main(int argc, char *argv[]){
 
     FileData file_data = read_file(argv[1]);
