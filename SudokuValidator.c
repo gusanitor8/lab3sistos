@@ -8,11 +8,14 @@
 #include <stdbool.h>
 #include <sys/wait.h>
 #include <pthread.h>
+#include <omp.h>
 
 #define ROWS 9
 #define COLUMNS 9
 
 int sudoku[ROWS][COLUMNS]; //sudoku 
+bool columns_valid = true;
+bool rows_valid = true;
 
 typedef struct {
     void* mapped_data;
@@ -109,9 +112,11 @@ bool check_three_by_three(int index){
  * @return false the sudoku is invalid
  */
 bool check_line(int index, int axis){
+    int thread_id = syscall(SYS_gettid);
     int validation[] = {0, 0, 0, 0, 0, 0, 0, 0, 0};     
 
     if (axis == 0){
+        printf("Fila revisada por hilo: %d\n", thread_id);
         for (int columns = 0; columns < COLUMNS; columns++){
             int number = sudoku[index][columns];
             
@@ -122,6 +127,7 @@ bool check_line(int index, int axis){
             }
         }
     }else{
+        printf("Columna revisada por hilo: %d\n", thread_id);
         for (int rows = 0; rows < ROWS; rows++){
             int number = sudoku[rows][index];
             
@@ -134,6 +140,33 @@ bool check_line(int index, int axis){
     }
 
     return true;
+}
+
+void* column_checker(void* arg){
+    int thread_id = syscall(SYS_gettid);
+    printf("Thread ID para la revision de columnas: %d\n", thread_id);
+
+    for (int i = 0; i < COLUMNS; i++){
+        if (!check_line(i, 1)){
+            printf("Column %d is invalid\n", i);
+            columns_valid = false;
+            pthread_exit(NULL);
+        }
+    }
+}
+
+
+void* row_checker(void* arg){
+    int thread_id = syscall(SYS_gettid);
+    printf("Thread ID para la revision de filas: %d\n", thread_id);
+
+    for (int i = 0; i < ROWS; i++){
+        if (!check_line(i, 0)){
+            printf("Row %d is invalid\n", i);
+            rows_valid = false;
+            pthread_exit(NULL);
+        }
+    }
 }
 
 /**
@@ -166,9 +199,36 @@ int main(int argc, char *argv[]){
         execlp("ps", "ps", "-p", pid_str, "-lLf", NULL);
     }else{
         // parent process
+        pthread_t column_thread_id;
+        pthread_create(&column_thread_id, NULL, column_checker, NULL);        
+        pthread_join(column_thread_id, NULL);
+        printf("Columns valid: %d\n", columns_valid); 
+        int thread_id = syscall(SYS_gettid);
+        printf("Thread ID main: %d\n", thread_id);
+        wait(NULL);
+    }
+
+
+    pid_t child2 = fork();
+
+    if (child2 == 0){
+        // child process        
+        char pid_str[20];
+        sprintf(pid_str, "%d", pid);
+
+        execlp("ps", "ps", "-p", pid_str, "-lLf", NULL);
+    }else{
+        // parent process
+        pthread_t row_thread_id;
+        pthread_create(&row_thread_id, NULL, row_checker, NULL);
+        pthread_join(row_thread_id, NULL);
+        printf("Rows valid: %d\n", rows_valid);
 
         wait(NULL);
     }
+
+
+    
 
     return 0;
 }
